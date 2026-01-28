@@ -1,10 +1,11 @@
-﻿using SomeApp.Data;
-using SomeApp.Models;
+﻿using SomeApp.Infrastructure.Data;
+using SomeApp.Domain.Repositories;
+using SomeApp.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace SomeApp.Services.Repos
+namespace SomeApp.Infrastructure.Repositories
 {
     public class EfCategoryRepository : ICategoryRepository
     {

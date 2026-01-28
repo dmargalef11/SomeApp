@@ -1,6 +1,6 @@
-﻿using SomeApp.Models;
+﻿using SomeApp.Domain.Entities;
 using Microsoft.AspNetCore.Mvc;
-using SomeApp.Services;
+using SomeApp.Application.Services;
 
 namespace SomeApp.API.Controllers
 {

@@ -1,7 +1,8 @@
 ﻿using System.Collections.Generic;
-using SomeApp.Domain.Models;
+using SomeApp.Domain.Entities;
+using SomeApp.Domain.Repositories;
 
-namespace SomeApp.Services
+namespace SomeApp.Application.Services
 {
     public interface IProductService
     {

@@ -1,7 +1,7 @@
-﻿using SomeApp.Domain.Models;
+﻿using SomeApp.Domain.Entities;
 using System.Collections.Generic;
 
-namespace SomeApp.Services.Repos
+namespace SomeApp.Domain.Repositories
 {
     public interface IProductRepository
     {

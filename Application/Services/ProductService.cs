@@ -1,9 +1,9 @@
 ﻿using System.Linq;
 using System.Collections.Generic;
-using SomeApp.Services.Repos;
-using SomeApp.Domain.Models;
+using SomeApp.Domain.Repositories;
+using SomeApp.Domain.Entities;
 
-namespace SomeApp.Services
+namespace SomeApp.Application.Services
 {
     public class ProductService : IProductService
     {

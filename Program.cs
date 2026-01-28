@@ -1,8 +1,11 @@
 using Microsoft.EntityFrameworkCore;
-using SomeApp.Data;
-using SomeApp.Services.Repos;
 using Microsoft.OpenApi;
-using SomeApp.Services;
+using SomeApp.Domain.Repositories;
+using SomeApp.Application.Services;
+using SomeApp.Infrastructure.Repositories;
+using SomeApp.Infrastructure.Data;
+using Microsoft.EntityFrameworkCore;
+
 
 var builder = WebApplication.CreateBuilder(args);
 

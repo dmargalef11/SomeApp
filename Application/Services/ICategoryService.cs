@@ -1,15 +1,14 @@
-﻿using SomeApp.Models;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using SomeApp.Domain.Entities;
 
-namespace SomeApp.Services.Repos
+namespace SomeApp.Application.Services
 {
-    public interface ICategoryRepository
+    public interface ICategoryService
     {
         IEnumerable<Category> GetAll();
         Category GetById(int id);
         void Add(Category category);
         bool Delete(int id);
         void Update(int id, Category updatedCategory);
-
     }
 }

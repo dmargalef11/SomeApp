@@ -1,9 +1,9 @@
 ﻿using System.Linq;
 using System.Collections.Generic;
-using SomeApp.Models;
-using SomeApp.Services.Repos;
+using SomeApp.Domain.Entities;
+using SomeApp.Domain.Repositories;
 
-namespace SomeApp.Services
+namespace SomeApp.Application.Services
 {
     public class CategoryService : ICategoryService
     {
