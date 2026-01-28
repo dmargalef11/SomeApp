@@ -1,8 +1,8 @@
 ﻿using SomeApp.Data;
-using SomeApp.Models;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Linq;
+using SomeApp.Domain.Models;
 
 namespace SomeApp.Services.Repos
 {

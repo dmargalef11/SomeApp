@@ -1,5 +1,5 @@
 ﻿using System.Collections.Generic;
-using SomeApp.Models;
+using SomeApp.Domain.Models;
 
 namespace SomeApp.Services
 {

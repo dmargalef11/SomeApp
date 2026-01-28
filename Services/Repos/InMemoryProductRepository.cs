@@ -1,4 +1,4 @@
-﻿using SomeApp.Models;
+﻿using SomeApp.Domain.Models;
 using System.Collections.Generic;
 
 namespace SomeApp.Services.Repos
