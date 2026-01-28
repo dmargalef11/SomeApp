@@ -2,13 +2,17 @@ using Microsoft.EntityFrameworkCore;
 using SomeApp.Data;
 using SomeApp.Services.Repos;
 using Microsoft.OpenApi;
+using SomeApp.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddRazorPages();
 builder.Services.AddScoped<IProductRepository, EfProductRepository>();
-builder.Services.AddScoped<SomeApp.Services.IProductService, SomeApp.Services.ProductService>();
+builder.Services.AddScoped<ICategoryRepository, EfCategoryRepository>();
+builder.Services.AddScoped<IProductService, ProductService>();
+builder.Services.AddScoped<ICategoryService, CategoryService>();
+
 builder.Services.AddDbContext<AppDbContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 // Swagger
 builder.Services.AddEndpointsApiExplorer();
