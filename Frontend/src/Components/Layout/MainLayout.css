@@ -1,0 +1,43 @@
+﻿.app-container {
+    display: flex;
+    height: 100vh;
+    width: 100vw;
+}
+
+.sidebar {
+    width: 250px;
+    background-color: #2c3e50;
+    color: white;
+    display: flex;
+    flex-direction: column;
+    padding: 1rem;
+}
+
+    .sidebar h2 {
+        font-size: 1.2rem;
+        margin-bottom: 2rem;
+        color: #ecf0f1;
+        text-align: center;
+    }
+
+.nav-link {
+    padding: 10px 15px;
+    color: #bdc3c7;
+    text-decoration: none;
+    border-radius: 4px;
+    margin-bottom: 5px;
+    transition: all 0.3s;
+}
+
+    .nav-link:hover {
+        background-color: #34495e;
+        color: white;
+        padding-left: 20px; /* Efecto visual simple */
+    }
+
+.content-area {
+    flex: 1;
+    background-color: #f4f6f8; /* Color gris suave típico de ERP */
+    padding: 2rem;
+    overflow-y: auto;
+}

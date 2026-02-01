@@ -22,6 +22,9 @@
 
   <ItemGroup>
     <Folder Include="Application\DTOs\" />
+    <Folder Include="Frontend\src\Components\UI\" />
+    <Folder Include="Frontend\src\Pages\Dashboard\" />
+    <Folder Include="Frontend\src\Services\" />
     <Folder Include="Tests\" />
   </ItemGroup>
 

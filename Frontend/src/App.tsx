@@ -1,42 +1,26 @@
-import { useEffect, useState } from 'react';
-import axios from 'axios';
-import './App.css';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import MainLayout from './Components/Layout/MainLayout';
+import DistributorsPage from './Pages/Distributors/DistributorsPage';
+import ProductsPage from './Pages/Products/ProductsPage'; // <--- Importar
+import ProjectsPage from './Pages/Projects/ProjectsPage'; // <--- Importar
+import MaterialsPage from './Pages/Materials/MaterialsPage';
 
-interface Distributor {
-    id: number;
-    name: string;
-    logoUrl: string;
-}
+
+const Dashboard = () => <h1>Welcome to RoomFlow Dashboard</h1>;
 
 function App() {
-    const [distributors, setDistributors] = useState<Distributor[]>([]);
-
-    useEffect(() => {
-        // Asegúrate de que este puerto (5113) es el de tu API
-        axios.get('http://localhost:5113/api/Distributors')
-            .then(response => {
-                setDistributors(response.data);
-            })
-            .catch(error => {
-                console.error("Error cargando distribuidores:", error);
-            });
-    }, []);
-
     return (
-        <div>
-            <h1>RoomFlow - Distribuidores</h1>
-
-            <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
-                {distributors.map(dist => (
-                    <div key={dist.id} style={{ border: '1px solid #ccc', padding: '10px', borderRadius: '8px' }}>
-                        <h3>{dist.name}</h3>
-                        {dist.logoUrl && <img src={dist.logoUrl} alt={dist.name} width="100" />}
-                    </div>
-                ))}
-            </div>
-
-            {distributors.length === 0 && <p>Cargando datos...</p>}
-        </div>
+        <BrowserRouter>
+            <Routes>
+                <Route path="/" element={<MainLayout />}>
+                    <Route index element={<Dashboard />} />
+                    <Route path="projects" element={<ProjectsPage />} /> {/* <--- Usar */}
+                    <Route path="materials" element={<MaterialsPage />} />
+                    <Route path="distributors" element={<DistributorsPage />} />
+                    <Route path="products" element={<ProductsPage />} /> {/* <--- Usar */}
+                </Route>
+            </Routes>
+        </BrowserRouter>
     );
 }
 
