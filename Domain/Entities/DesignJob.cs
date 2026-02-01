@@ -11,6 +11,6 @@
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         // Navegación
-        public Project Project { get; set; } = null!;
+        public Project? Project { get; set; } = null!;
     }
 }

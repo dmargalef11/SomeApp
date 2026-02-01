@@ -18,5 +18,21 @@ namespace SomeApp.Infrastructure.Data
         public DbSet<Material> Materials { get; set; }
         public DbSet<DesignJob> DesignJobs { get; set; }
 
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            base.OnModelCreating(modelBuilder);
+
+            // Configuración para Material.Price
+            modelBuilder.Entity<Material>()
+                .Property(m => m.Price)
+                .HasColumnType("decimal(18,2)"); // 18 dígitos, 2 decimales
+
+            // Si también tienes Product.Price, haz lo mismo:
+            modelBuilder.Entity<Product>()
+                .Property(p => p.Price)
+                .HasColumnType("decimal(18,2)");
+        }
+
+
     }
 }

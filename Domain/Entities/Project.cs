@@ -10,7 +10,7 @@
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         // Navegación
-        public Distributor Distributor { get; set; } = null!;
+        public Distributor? Distributor { get; set; } = null!;
         public List<DesignJob> DesignJobs { get; set; } = new();
     }
 }

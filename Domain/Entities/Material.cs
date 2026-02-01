@@ -12,6 +12,6 @@
         public int DistributorId { get; set; }
 
         // Navegación
-        public Distributor Distributor { get; set; } = null!;
+        public Distributor? Distributor { get; set; } = null!;
     }
 }
