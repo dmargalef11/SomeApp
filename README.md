@@ -30,13 +30,15 @@ Uses **Table-Per-Hierarchy (TPH)** strategy to handle different material types w
 
 ## Architecture Overview
 
-The solution follows a clean separation of concerns:
+The solution follows a strict **Clean Architecture (N-Layer)** pattern, separating concerns into distinct projects to ensure maintainability and scalability:
 
-1.  **Domain:** Core entities (`Project`, `Material`, `ProjectMaterial`) and interfaces.
-2.  **Infrastructure:** EF Core implementation, Repositories (`EfMaterialRepository`), and SQL migrations.
-3.  **Application:** Services (`MaterialService`) containing business logic.
-4.  **API:** RESTful controllers handling HTTP requests and DTOs.
-5.  **Client:** React SPA consuming the API via Axios.
+*   **Domain:** The core of the system. Contains enterprise entities (`Material`, `Project`, `Distributor`) and repository interfaces (`IMaterialRepository`). It has no dependencies on other layers.
+*   **Application:** Contains the business logic and service layer (`MaterialService`). It orchestrates data flow between the API and the Domain.
+*   **Infrastructure:** Handles external concerns. Implements the data access layer using **Entity Framework Core** (`EfMaterialRepository`, `AppDbContext`).
+*   **API:** The entry point. A .NET 8 Web API with RESTful controllers that exposes endpoints to the client.
+*   **Frontend:** A React (Vite) + TypeScript Single Page Application (SPA) that consumes the API.
+*   **Migrations:** Manages database schema evolution and versioning.
+*   **Tests:** Unit and integration tests to ensure system reliability.
 
 
 ### Prerequisites
