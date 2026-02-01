@@ -10,6 +10,5 @@ namespace SomeApp.Application.Services
         void Add(Project project);
         bool Delete(int id);
         void Update(int id, Project updatedProject);
-        IEnumerable<Project> GetByDistributorId(int distributorId);
     }
 }

@@ -26,11 +26,6 @@ namespace SomeApp.API.Controllers
             return Ok(item);
         }
 
-        [HttpGet("distributor/{distributorId}")]
-        public ActionResult<IEnumerable<Project>> GetByDistributor(int distributorId)
-        {
-            return Ok(_service.GetByDistributorId(distributorId));
-        }
 
         [HttpPost]
         public ActionResult<Project> Create(Project project)

@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SomeApp.Infrastructure.Data;
 
@@ -11,9 +12,11 @@ using SomeApp.Infrastructure.Data;
 namespace SomeApp.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260201201816_AddProjectMaterials")]
+    partial class AddProjectMaterials
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -185,7 +188,7 @@ namespace SomeApp.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int?>("DistributorId")
+                    b.Property<int>("DistributorId")
                         .HasColumnType("int");
 
                     b.Property<string>("Name")
@@ -230,7 +233,7 @@ namespace SomeApp.Migrations
 
                     b.HasIndex("ProjectId");
 
-                    b.ToTable("ProjectMaterials");
+                    b.ToTable("ProjectMaterial");
                 });
 
             modelBuilder.Entity("SomeApp.Domain.Entities.Cement", b =>
@@ -324,9 +327,13 @@ namespace SomeApp.Migrations
 
             modelBuilder.Entity("SomeApp.Domain.Entities.Project", b =>
                 {
-                    b.HasOne("SomeApp.Domain.Entities.Distributor", null)
+                    b.HasOne("SomeApp.Domain.Entities.Distributor", "Distributor")
                         .WithMany("Projects")
-                        .HasForeignKey("DistributorId");
+                        .HasForeignKey("DistributorId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Distributor");
                 });
 
             modelBuilder.Entity("SomeApp.Domain.Entities.ProjectMaterial", b =>

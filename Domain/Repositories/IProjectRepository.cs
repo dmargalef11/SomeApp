@@ -11,7 +11,6 @@ namespace SomeApp.Domain.Repositories
         bool Delete(int id);
         void Update(int id, Project updatedProject);
 
-        // Útil para listar proyectos de un distribuidor
-        IEnumerable<Project> GetByDistributorId(int distributorId);
+        
     }
 }

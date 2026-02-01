@@ -28,6 +28,9 @@ namespace SomeApp.Domain.Entities
         public int DistributorId { get; set; }
         public Distributor? Distributor { get; set; }
 
+        [JsonIgnore] // No queremos enviar todos los proyectos al pedir un material
+        public List<ProjectMaterial> ProjectMaterials { get; set; } = new();
+
         // PROPIEDAD COMPUTADA: Útil para que el Frontend sepa qué formulario mostrar.
         // [NotMapped] asegura que EF Core no intente crear una columna 'Type' duplicada.
         [NotMapped]

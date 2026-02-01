@@ -69,6 +69,26 @@ const MaterialsPage = () => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
+    
+    const handleDelete = async (id: number) => {
+        if (!confirm('Are you sure you want to delete this material?')) return;
+
+        try {
+            await axios.delete(`http://localhost:5113/api/Materials/${id}`);
+            setMaterials(prev => prev.filter(m => m.id !== id));
+        } catch (error) {
+            // Usamos la función de ayuda de Axios para saber si es un error de red/api
+            if (axios.isAxiosError(error) && error.response?.status === 409) {
+                alert("⛔ CANNOT DELETE: This material is currently used in a Project.\n\nRemove it from the project first.");
+            } else {
+                console.error(error);
+                alert("Error deleting material");
+            }
+        }
+    };
+
+
+
     return (
         <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
@@ -231,13 +251,24 @@ const MaterialsPage = () => {
                                         )}
                                     </div>
 
-                                    {/* Botón Edit Details */}
-                                    <button
-                                        onClick={() => handleEdit(mat)}
-                                        style={{ width: '100%', marginTop: '10px', padding: '8px', border: '1px solid #ddd', background: 'transparent', borderRadius: '4px', cursor: 'pointer' }}
-                                    >
-                                        Edit Details
-                                    </button>
+
+                                    {/* Botonera */}
+                                    <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+                                        <button
+                                            onClick={() => handleEdit(mat)}
+                                            style={{ flex: 1, padding: '8px', border: '1px solid #ddd', background: 'transparent', borderRadius: '4px', cursor: 'pointer' }}
+                                        >
+                                            Edit
+                                        </button>
+                                        <button
+                                            onClick={() => handleDelete(mat.id)}
+                                            style={{ flex: 1, padding: '8px', border: 'none', background: '#ffebee', color: '#c62828', borderRadius: '4px', cursor: 'pointer' }}
+                                        >
+                                            Delete
+                                        </button>
+                                    </div>
+
+
                                 </div>
                             </div>
                         );

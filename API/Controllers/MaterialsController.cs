@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using SomeApp.Application.Services;
 using SomeApp.Domain.Entities;
 
@@ -81,11 +82,47 @@ namespace SomeApp.API.Controllers
 
         // ... Update para Cement ...
 
-        [HttpDelete("{id}")]
-        public IActionResult Delete(int id)
+        [HttpPut("cement/{id}")]
+        public IActionResult UpdateCement(int id, [FromBody] Cement cement)
         {
-            if (!_service.Delete(id)) return NotFound();
+            if (id != cement.Id) return BadRequest();
+            _service.Update(id, cement);
             return NoContent();
         }
+
+
+       
+
+        [HttpDelete("{id}")]
+        public IActionResult DeleteMaterial(int id)
+        {
+            try
+            {
+
+                var deleted = _service.Delete(id);
+
+
+                if (!deleted)
+                {
+                    return NotFound();
+                }
+
+                return NoContent();
+            }
+            catch (DbUpdateException)
+            {
+
+                return Conflict(new { message = "Cannot delete material because it is being used in one or more projects." });
+            }
+            catch (Exception ex)
+            {
+
+                return StatusCode(500, "Internal server error: " + ex.Message);
+            }
+        }
+
+
+
+
     }
 }

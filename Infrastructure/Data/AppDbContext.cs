@@ -16,6 +16,7 @@ namespace SomeApp.Infrastructure.Data
         public DbSet<Project> Projects { get; set; }
         public DbSet<Distributor> Distributors { get; set; }
         public DbSet<Material> Materials { get; set; }
+        public DbSet<ProjectMaterial> ProjectMaterials { get; set; }
         public DbSet<Paint> Paints { get; set; }
         public DbSet<Tile> Tiles { get; set; }
         public DbSet<Cement> Cements { get; set; } // y Wood, Metal, etc si tienes
@@ -40,6 +41,19 @@ namespace SomeApp.Infrastructure.Data
             .HasValue<Paint>("Paint")
             .HasValue<Tile>("Tile")
             .HasValue<Cement>("Cement");
+
+            // Configuración ProjectMaterial
+            modelBuilder.Entity<ProjectMaterial>()
+                .HasOne(pm => pm.Project)
+                .WithMany(p => p.ProjectMaterials)
+                .HasForeignKey(pm => pm.ProjectId)
+                .OnDelete(DeleteBehavior.Cascade); // Si borro el proyecto, se borran sus líneas de material (Lógico)
+
+            modelBuilder.Entity<ProjectMaterial>()
+                .HasOne(pm => pm.Material)
+                .WithMany(m => m.ProjectMaterials)
+                .HasForeignKey(pm => pm.MaterialId)
+                .OnDelete(DeleteBehavior.Restrict); // Restrict: No deja borrar el Material si tiene filas en ProjectMaterials.
 
         }
 

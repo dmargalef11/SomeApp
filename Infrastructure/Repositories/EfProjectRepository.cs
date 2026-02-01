@@ -43,17 +43,10 @@ namespace SomeApp.Infrastructure.Repositories
             existing.Name = updatedProject.Name;
             existing.CustomerName = updatedProject.CustomerName;
             existing.RoomPhotoUrl = updatedProject.RoomPhotoUrl;
-            existing.DistributorId = updatedProject.DistributorId;
 
             _context.SaveChanges();
         }
 
-        public IEnumerable<Project> GetByDistributorId(int distributorId)
-        {
-            return _context.Projects
-                .Where(p => p.DistributorId == distributorId)
-                .AsNoTracking()
-                .ToList();
-        }
+        
     }
 }
