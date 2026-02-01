@@ -2,16 +2,27 @@
 import axios from 'axios';
 import imageCompression from 'browser-image-compression';
 
-
-// Interfaces (reutiliza las que tengas o impórtalas si las sacaste a un archivo común)
 interface Distributor {
     id: number;
     name: string;
 }
 
+// EDIT: Añadimos la interfaz del Material para poder recibirlo
+interface Material {
+    id: number;
+    name: string;
+    type: string;
+    color: string;
+    texture: string;
+    price: number;
+    thumbnailUrl: string;
+    distributorId: number;
+}
+
 interface MaterialFormProps {
     onSuccess: () => void;
     onCancel: () => void;
+    initialData?: Material | null; // EDIT: Prop nueva opcional
 }
 
 const convertToBase64 = (file: File): Promise<string> => {
@@ -23,22 +34,21 @@ const convertToBase64 = (file: File): Promise<string> => {
     });
 };
 
-const MaterialForm = ({ onSuccess, onCancel }: MaterialFormProps) => {
-    // Estado del formulario
+const MaterialForm = ({ onSuccess, onCancel, initialData }: MaterialFormProps) => {
+    // EDIT: Inicializamos el estado con los datos si existen, o vacíos si es nuevo
     const [formData, setFormData] = useState({
-        name: '',
-        type: 'Paint', // Valor por defecto
-        color: '#ffffff',
-        texture: '',
-        price: 0,
-        thumbnailUrl: '',
-        distributorId: '' // Empezamos vacío
+        name: initialData?.name || '',
+        type: initialData?.type || 'Paint',
+        color: initialData?.color || '#ffffff',
+        texture: initialData?.texture || '',
+        price: initialData?.price || 0,
+        thumbnailUrl: initialData?.thumbnailUrl || '',
+        distributorId: initialData?.distributorId || ''
     });
 
     const [distributors, setDistributors] = useState<Distributor[]>([]);
     const [loading, setLoading] = useState(false);
 
-    // Cargar distribuidores para el desplegable (Select)
     useEffect(() => {
         axios.get('http://localhost:5113/api/Distributors')
             .then(res => setDistributors(res.data))
@@ -54,30 +64,21 @@ const MaterialForm = ({ onSuccess, onCancel }: MaterialFormProps) => {
 
             if (originalFile) {
                 try {
-                    // CONFIGURACIÓN DE COMPRESIÓN
                     const options = {
-                        maxSizeMB: 0.1,          // Queremos que pese máximo 100KB (0.1 MB)
-                        maxWidthOrHeight: 800,   // Redimensionar si es gigante (max 800px)
-                        useWebWorker: true,      // Para que no se congele la pantalla
-                        fileType: "image/jpeg"   // Forzar formato ligero
+                        maxSizeMB: 0.1,
+                        maxWidthOrHeight: 800,
+                        useWebWorker: true,
+                        fileType: "image/jpeg"
                     };
-
-                    // Comprimir
-                    console.log(`Original size: ${originalFile.size / 1024 / 1024} MB`);
                     const compressedFile = await imageCompression(originalFile, options);
-                    console.log(`Compressed size: ${compressedFile.size / 1024 / 1024} MB`);
-
-                    // Convertir la versión comprimida a Base64
                     const base64 = await convertToBase64(compressedFile);
-
                     setFormData(prev => ({ ...prev, thumbnailUrl: base64 }));
                 } catch (err) {
-                    console.error("Error compressing image", err);
+                    console.error(err);
                     alert("Error processing image");
                 }
             }
         } else {
-            // Lógica normal
             setFormData(prev => ({
                 ...prev,
                 [name]: name === 'price' || name === 'distributorId' ? Number(value) : value
@@ -90,12 +91,21 @@ const MaterialForm = ({ onSuccess, onCancel }: MaterialFormProps) => {
         setLoading(true);
 
         try {
-            await axios.post('http://localhost:5113/api/Materials', formData);
-            alert('Material created successfully!');
-            onSuccess(); // Avisar al padre para que cierre y refresque
+            if (initialData) {
+                // EDIT: Si hay initialData, hacemos PUT (Actualizar)
+                // Necesitamos enviar el ID en la URL y el objeto con ID en el cuerpo
+                const updatePayload = { ...formData, id: initialData.id };
+                await axios.put(`http://localhost:5113/api/Materials/${initialData.id}`, updatePayload);
+                alert('Material updated successfully!');
+            } else {
+                // EDIT: Si no, hacemos POST (Crear)
+                await axios.post('http://localhost:5113/api/Materials', formData);
+                alert('Material created successfully!');
+            }
+            onSuccess();
         } catch (error) {
-            console.error("Error creating material:", error);
-            alert('Error creating material. Check console.');
+            console.error("Error saving material:", error);
+            alert('Error saving material.');
         } finally {
             setLoading(false);
         }
@@ -103,23 +113,17 @@ const MaterialForm = ({ onSuccess, onCancel }: MaterialFormProps) => {
 
     return (
         <div style={{ background: '#f8f9fa', padding: '20px', borderRadius: '8px', marginBottom: '20px', border: '1px solid #ddd' }}>
-            <h3>New Material</h3>
-            <form onSubmit={handleSubmit} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+            {/* EDIT: Título dinámico */}
+            <h3>{initialData ? `Edit Material #${initialData.id}` : 'New Material'}</h3>
 
-                {/* Nombre */}
+            <form onSubmit={handleSubmit} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+                {/* ... (El resto del formulario es idéntico, no cambia nada visualmente) ... */}
+
                 <div style={{ gridColumn: 'span 2' }}>
                     <label>Material Name:</label>
-                    <input
-                        required
-                        type="text"
-                        name="name"
-                        value={formData.name}
-                        onChange={handleChange}
-                        style={{ width: '100%', padding: '8px' }}
-                    />
+                    <input required type="text" name="name" value={formData.name} onChange={handleChange} style={{ width: '100%', padding: '8px' }} />
                 </div>
 
-                {/* Tipo */}
                 <div>
                     <label>Type:</label>
                     <select name="type" value={formData.type} onChange={handleChange} style={{ width: '100%', padding: '8px' }}>
@@ -131,93 +135,50 @@ const MaterialForm = ({ onSuccess, onCancel }: MaterialFormProps) => {
                     </select>
                 </div>
 
-                {/* Distribuidor (Clave) */}
                 <div>
                     <label>Distributor:</label>
-                    <select
-                        required
-                        name="distributorId"
-                        value={formData.distributorId}
-                        onChange={handleChange}
-                        style={{ width: '100%', padding: '8px' }}
-                    >
+                    <select required name="distributorId" value={formData.distributorId} onChange={handleChange} style={{ width: '100%', padding: '8px' }}>
                         <option value="">Select a Supplier...</option>
-                        {distributors.map(d => (
-                            <option key={d.id} value={d.id}>{d.name}</option>
-                        ))}
+                        {distributors.map(d => (<option key={d.id} value={d.id}>{d.name}</option>))}
                     </select>
                 </div>
 
-                {/* Precio */}
                 <div>
-                    <label>Price (€):</label>
-                    <input
-                        type="number"
-                        step="0.01"
-                        name="price"
-                        value={formData.price}
-                        onChange={handleChange}
-                        style={{ width: '100%', padding: '8px' }}
-                    />
+                    <label>Price ({'\u20AC'}):</label>
+                    <input type="number" step="0.01" name="price" value={formData.price} onChange={handleChange} style={{ width: '100%', padding: '8px' }} />
                 </div>
 
-                {/* Color (Picker) */}
                 <div>
                     <label>Color:</label>
                     <div style={{ display: 'flex', gap: '10px' }}>
-                        <input
-                            type="color"
-                            name="color"
-                            value={formData.color}
-                            onChange={handleChange}
-                            style={{ height: '38px', width: '50px' }}
-                        />
-                        <input
-                            type="text"
-                            name="color"
-                            value={formData.color}
-                            onChange={handleChange}
-                            style={{ flex: 1, padding: '8px' }}
-                        />
+                        <input type="color" name="color" value={formData.color} onChange={handleChange} style={{ height: '38px', width: '50px' }} />
+                        <input type="text" name="color" value={formData.color} onChange={handleChange} style={{ flex: 1, padding: '8px' }} />
                     </div>
                 </div>
 
-                {/* Textura */}
                 <div>
                     <label>Texture:</label>
-                    <input
-                        type="text"
-                        name="texture"
-                        value={formData.texture}
-                        onChange={handleChange}
-                        placeholder="e.g. Matte, Glossy, Rough"
-                        style={{ width: '100%', padding: '8px' }}
-                    />
+                    <input type="text" name="texture" value={formData.texture} onChange={handleChange} style={{ width: '100%', padding: '8px' }} />
                 </div>
 
-                {/* URL Imagen (Opcional por ahora) */}
-                <div>
-                    <label>Image URL:</label>
-                    <input
-                        type="text"
-                        name="thumbnailUrl"
-                        value={formData.thumbnailUrl}
-                        onChange={handleChange}
-                        placeholder="http://..."
-                        style={{ width: '100%', padding: '8px' }}
-                    />
+                <div style={{ gridColumn: 'span 2' }}>
+                    <label>Material Image (Upload):</label>
+                    <div style={{ display: 'flex', gap: '15px', alignItems: 'center', marginTop: '5px' }}>
+                        <input type="file" accept="image/*" onChange={handleChange} style={{ padding: '5px' }} />
+                        {formData.thumbnailUrl && (
+                            <div style={{ width: '50px', height: '50px', border: '1px solid #ddd', borderRadius: '4px', overflow: 'hidden' }}>
+                                <img src={formData.thumbnailUrl} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            </div>
+                        )}
+                    </div>
                 </div>
 
-                {/* Botones */}
                 <div style={{ gridColumn: 'span 2', marginTop: '10px', display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
-                    <button type="button" onClick={onCancel} style={{ padding: '10px 20px', background: '#ccc', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
-                        Cancel
-                    </button>
+                    <button type="button" onClick={onCancel} style={{ padding: '10px 20px', background: '#ccc', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Cancel</button>
                     <button type="submit" disabled={loading} style={{ padding: '10px 20px', background: '#27ae60', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
-                        {loading ? 'Saving...' : 'Save Material'}
+                        {loading ? 'Saving...' : (initialData ? 'Update Material' : 'Save Material')}
                     </button>
                 </div>
-
             </form>
         </div>
     );

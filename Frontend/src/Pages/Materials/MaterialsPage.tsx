@@ -27,11 +27,10 @@ const MaterialsPage = () => {
     const [loading, setLoading] = useState(true);
     const [showForm, setShowForm] = useState(false);
 
-    // 1. Esta función carga los datos. La usaremos al inicio y al guardar.
+    // NUEVO: Estado para saber qué material estamos editando (null si es crear uno nuevo)
+    const [editingMaterial, setEditingMaterial] = useState<Material | null>(null);
+
     const loadData = async () => {
-        // No ponemos setLoading(true) aquí para evitar parpadeos feos al recargar,
-        // o si quieres que parpadee, descoméntalo.
-        // setLoading(true); 
         try {
             const [matRes, distRes] = await Promise.all([
                 axios.get('http://localhost:5113/api/Materials'),
@@ -46,12 +45,25 @@ const MaterialsPage = () => {
         }
     };
 
-    // 2. useEffect simplificado para usar la función de arriba
     useEffect(() => {
         loadData();
     }, []);
 
     const getDistributor = (id: number) => distributors.find(d => d.id === id);
+
+    // NUEVO: Función para abrir el formulario en modo CREAR
+    const handleCreate = () => {
+        setEditingMaterial(null); // Limpiamos para asegurar que está vacío
+        setShowForm(true);
+    };
+
+    // NUEVO: Función para abrir el formulario en modo EDITAR
+    const handleEdit = (material: Material) => {
+        setEditingMaterial(material); // Cargamos los datos del material seleccionado
+        setShowForm(true);
+        // Pequeño scroll suave hacia arriba para que el usuario vea el formulario
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
 
     return (
         <div>
@@ -61,10 +73,9 @@ const MaterialsPage = () => {
                     <p style={{ color: '#666', marginTop: '-10px' }}>Manage paints, tiles, and raw materials</p>
                 </div>
 
-                {/* 3. CAMBIO: Botón con evento onClick y ocultarlo si el form está abierto */}
                 {!showForm && (
                     <button
-                        onClick={() => setShowForm(true)}
+                        onClick={handleCreate} // NUEVO: Usamos handleCreate
                         style={{ padding: '10px 20px', background: '#27ae60', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer' }}
                     >
                         + New Material
@@ -72,13 +83,13 @@ const MaterialsPage = () => {
                 )}
             </div>
 
-            {/* 4. CAMBIO: Aquí insertamos el formulario condicionalmente */}
             {showForm && (
                 <MaterialForm
+                    initialData={editingMaterial} // NUEVO: Pasamos los datos (o null)
                     onCancel={() => setShowForm(false)}
                     onSuccess={() => {
-                        setShowForm(false); // Cerramos formulario
-                        loadData();         // Recargamos la lista
+                        setShowForm(false);
+                        loadData(); // Recargamos la lista tras guardar/editar
                     }}
                 />
             )}
@@ -119,7 +130,6 @@ const MaterialsPage = () => {
                                         borderRadius: '4px',
                                         fontSize: '0.9em'
                                     }}>
-                                        {/* Usamos unicode para el Euro por si acaso */}
                                         {'\u20AC'}{mat.price.toFixed(2)} /unit
                                     </span>
                                 </div>
@@ -154,7 +164,11 @@ const MaterialsPage = () => {
                                         <p style={{ margin: '5px 0' }}><strong>Color:</strong> {mat.color}</p>
                                     </div>
 
-                                    <button style={{ width: '100%', marginTop: '10px', padding: '8px', border: '1px solid #ddd', background: 'transparent', borderRadius: '4px', cursor: 'pointer' }}>
+                                    {/* NUEVO: Botón Edit Details conectado */}
+                                    <button
+                                        onClick={() => handleEdit(mat)}
+                                        style={{ width: '100%', marginTop: '10px', padding: '8px', border: '1px solid #ddd', background: 'transparent', borderRadius: '4px', cursor: 'pointer' }}
+                                    >
                                         Edit Details
                                     </button>
                                 </div>
