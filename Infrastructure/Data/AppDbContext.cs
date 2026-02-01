@@ -16,6 +16,9 @@ namespace SomeApp.Infrastructure.Data
         public DbSet<Project> Projects { get; set; }
         public DbSet<Distributor> Distributors { get; set; }
         public DbSet<Material> Materials { get; set; }
+        public DbSet<Paint> Paints { get; set; }
+        public DbSet<Tile> Tiles { get; set; }
+        public DbSet<Cement> Cements { get; set; } // y Wood, Metal, etc si tienes
         public DbSet<DesignJob> DesignJobs { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -31,6 +34,13 @@ namespace SomeApp.Infrastructure.Data
             modelBuilder.Entity<Product>()
                 .Property(p => p.Price)
                 .HasColumnType("decimal(18,2)");
+
+            modelBuilder.Entity<Material>()
+            .HasDiscriminator<string>("Discriminator") // Columna oculta que guarda "Paint", "Tile", etc.
+            .HasValue<Paint>("Paint")
+            .HasValue<Tile>("Tile")
+            .HasValue<Cement>("Cement");
+
         }
 
 

@@ -2,7 +2,6 @@
 import axios from 'axios';
 import MaterialForm from './MaterialForm';
 
-// Interfaces basadas en tu dominio .NET
 interface Distributor {
     id: number;
     name: string;
@@ -13,12 +12,22 @@ interface Material {
     id: number;
     name: string;
     type: string;
-    color: string;
-    texture: string;
     price: number;
     thumbnailUrl: string;
     distributorId: number;
     distributor?: Distributor;
+
+    // Propiedades opcionales de los hijos (Paint, Tile, Cement)
+    colorHex?: string;
+    finish?: string;
+    isWaterBased?: boolean;    // <--- Faltaba esta
+    widthCm?: number;
+    heightCm?: number;
+    isAntiSlip?: boolean;
+    materialType?: string;     // <--- Faltaba esta (para Tile)
+    weightKg?: number;
+    strengthClass?: string;
+    cementColor?: string;
 }
 
 const MaterialsPage = () => {
@@ -26,8 +35,6 @@ const MaterialsPage = () => {
     const [distributors, setDistributors] = useState<Distributor[]>([]);
     const [loading, setLoading] = useState(true);
     const [showForm, setShowForm] = useState(false);
-
-    // NUEVO: Estado para saber qué material estamos editando (null si es crear uno nuevo)
     const [editingMaterial, setEditingMaterial] = useState<Material | null>(null);
 
     const loadData = async () => {
@@ -51,17 +58,14 @@ const MaterialsPage = () => {
 
     const getDistributor = (id: number) => distributors.find(d => d.id === id);
 
-    // NUEVO: Función para abrir el formulario en modo CREAR
     const handleCreate = () => {
-        setEditingMaterial(null); // Limpiamos para asegurar que está vacío
+        setEditingMaterial(null);
         setShowForm(true);
     };
 
-    // NUEVO: Función para abrir el formulario en modo EDITAR
     const handleEdit = (material: Material) => {
-        setEditingMaterial(material); // Cargamos los datos del material seleccionado
+        setEditingMaterial(material);
         setShowForm(true);
-        // Pequeño scroll suave hacia arriba para que el usuario vea el formulario
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
@@ -75,7 +79,7 @@ const MaterialsPage = () => {
 
                 {!showForm && (
                     <button
-                        onClick={handleCreate} // NUEVO: Usamos handleCreate
+                        onClick={handleCreate}
                         style={{ padding: '10px 20px', background: '#27ae60', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer' }}
                     >
                         + New Material
@@ -85,11 +89,11 @@ const MaterialsPage = () => {
 
             {showForm && (
                 <MaterialForm
-                    initialData={editingMaterial} // NUEVO: Pasamos los datos (o null)
+                    initialData={editingMaterial}
                     onCancel={() => setShowForm(false)}
                     onSuccess={() => {
                         setShowForm(false);
-                        loadData(); // Recargamos la lista tras guardar/editar
+                        loadData();
                     }}
                 />
             )}
@@ -98,6 +102,9 @@ const MaterialsPage = () => {
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px' }}>
                     {materials.map(mat => {
                         const dist = getDistributor(mat.distributorId);
+
+                        // Lógica visual para el fondo de la tarjeta
+                        const cardBackground = mat.colorHex || '#ddd';
 
                         return (
                             <div key={mat.id} style={{
@@ -109,7 +116,7 @@ const MaterialsPage = () => {
                             }}>
                                 <div style={{
                                     height: '120px',
-                                    background: mat.color || '#ddd',
+                                    background: cardBackground, // Usamos la variable calculada
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'center',
@@ -159,12 +166,72 @@ const MaterialsPage = () => {
                                         )}
                                     </div>
 
-                                    <div style={{ marginTop: '15px', fontSize: '0.9em', color: '#666' }}>
-                                        <p style={{ margin: '5px 0' }}><strong>Texture:</strong> {mat.texture}</p>
-                                        <p style={{ margin: '5px 0' }}><strong>Color:</strong> {mat.color}</p>
+                                    {/* DETALLES ESPECÍFICOS SEGÚN EL TIPO */}
+                                    <div style={{ marginTop: '15px', fontSize: '0.9em', color: '#666', minHeight: '60px' }}>
+
+                                        {/* PINTURA */}
+                                        {mat.type === 'Paint' && (
+                                            <>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', margin: '5px 0' }}>
+                                                    <strong>Color:</strong>
+                                                    {mat.colorHex ? (
+                                                        <>
+                                                            <span style={{
+                                                                display: 'inline-block',
+                                                                width: '12px', height: '12px',
+                                                                backgroundColor: mat.colorHex,
+                                                                borderRadius: '50%', border: '1px solid #ccc'
+                                                            }}></span>
+                                                            <span style={{ textTransform: 'uppercase' }}>{mat.colorHex}</span>
+                                                        </>
+                                                    ) : 'N/A'}
+                                                </div>
+                                                <p style={{ margin: '5px 0' }}><strong>Finish:</strong> {mat.finish || '-'}</p>
+                                                {mat.isWaterBased && (
+                                                    <span style={{ fontSize: '0.85em', background: '#e3f2fd', color: '#1565c0', padding: '2px 6px', borderRadius: '4px' }}>
+                                                        💧 Water Based
+                                                    </span>
+                                                )}
+                                            </>
+                                        )}
+
+                                        {/* AZULEJO */}
+                                        {mat.type === 'Tile' && (
+                                            <>
+                                                <p style={{ margin: '5px 0' }}>
+                                                    <strong>Size:</strong> {mat.widthCm} x {mat.heightCm} cm
+                                                </p>
+                                                <div style={{ display: 'flex', gap: '5px', marginTop: '5px' }}>
+                                                    <span style={{ background: '#f5f5f5', padding: '2px 6px', borderRadius: '4px' }}>
+                                                        {mat.materialType || 'Ceramic'}
+                                                    </span>
+                                                    {mat.isAntiSlip && (
+                                                        <span style={{ background: '#fff3e0', color: '#e65100', padding: '2px 6px', borderRadius: '4px' }}>
+                                                            ⚠ Anti-Slip
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </>
+                                        )}
+
+                                        {/* CEMENTO */}
+                                        {mat.type === 'Cement' && (
+                                            <>
+                                                <p style={{ margin: '5px 0' }}><strong>Pack:</strong> {mat.weightKg} Kg</p>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                                    <span><strong>Class:</strong> {mat.strengthClass}</span>
+                                                    <span><strong>Color:</strong> {mat.cementColor || 'Grey'}</span>
+                                                </div>
+                                            </>
+                                        )}
+
+                                        {/* Fallback por si el tipo no coincide o es viejo */}
+                                        {!['Paint', 'Tile', 'Cement'].includes(mat.type) && (
+                                            <p style={{ fontStyle: 'italic', color: '#999' }}>Generic Material</p>
+                                        )}
                                     </div>
 
-                                    {/* NUEVO: Botón Edit Details conectado */}
+                                    {/* Botón Edit Details */}
                                     <button
                                         onClick={() => handleEdit(mat)}
                                         style={{ width: '100%', marginTop: '10px', padding: '8px', border: '1px solid #ddd', background: 'transparent', borderRadius: '4px', cursor: 'pointer' }}

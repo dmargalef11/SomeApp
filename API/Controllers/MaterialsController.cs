@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using SomeApp.Domain.Entities;
 using SomeApp.Application.Services;
+using SomeApp.Domain.Entities;
 
 namespace SomeApp.API.Controllers
 {
@@ -15,8 +15,12 @@ namespace SomeApp.API.Controllers
             _service = service;
         }
 
+        // GET: api/Materials (Devuelve todos mezclados: Paints, Tiles, etc.)
         [HttpGet]
-        public ActionResult<IEnumerable<Material>> GetAll() => Ok(_service.GetAll());
+        public ActionResult<IEnumerable<Material>> GetAll()
+        {
+            return Ok(_service.GetAll());
+        }
 
         [HttpGet("{id}")]
         public ActionResult<Material> GetById(int id)
@@ -26,26 +30,56 @@ namespace SomeApp.API.Controllers
             return Ok(item);
         }
 
-        [HttpGet("distributor/{distributorId}")]
-        public ActionResult<IEnumerable<Material>> GetByDistributor(int distributorId)
+        // POST: api/Materials/paint
+        [HttpPost("paint")]
+        public ActionResult CreatePaint([FromBody] Paint paint)
         {
-            return Ok(_service.GetByDistributorId(distributorId));
+            // Validaciones específicas de pintura si quieres
+            _service.Add(paint);
+            return CreatedAtAction(nameof(GetById), new { id = paint.Id }, paint);
         }
 
-        [HttpPost]
-        public ActionResult<Material> Create(Material material)
+        // POST: api/Materials/tile
+        [HttpPost("tile")]
+        public ActionResult CreateTile([FromBody] Tile tile)
         {
-            _service.Add(material);
-            return CreatedAtAction(nameof(GetById), new { id = material.Id }, material);
+            _service.Add(tile);
+            return CreatedAtAction(nameof(GetById), new { id = tile.Id }, tile);
         }
 
-        [HttpPut("{id}")]
-        public IActionResult Update(int id, Material material)
+        // POST: api/Materials/cement
+        [HttpPost("cement")]
+        public ActionResult CreateCement([FromBody] Cement cement)
         {
-            if (id != material.Id) return BadRequest();
-            _service.Update(id, material);
+            _service.Add(cement);
+            return CreatedAtAction(nameof(GetById), new { id = cement.Id }, cement);
+        }
+
+        // PUT: api/Materials/5
+        // Aquí recibimos un objeto dinámico o usamos un binder personalizado.
+        // Para simplificar, asumimos que el Frontend envía el objeto correcto y EF Core lo gestiona.
+        // Pero el ModelBinder por defecto fallará con la clase abstracta.
+        // TRUCO: Usamos 'Paint' como tipo por defecto o creamos sobrecargas.
+        // MEJOR OPCIÓN AHORA: Usar un DTO o recibir JObject, pero para no complicar, 
+        // vamos a hacer endpoints de update específicos también.
+
+        [HttpPut("paint/{id}")]
+        public IActionResult UpdatePaint(int id, [FromBody] Paint paint)
+        {
+            if (id != paint.Id) return BadRequest();
+            _service.Update(id, paint);
             return NoContent();
         }
+
+        [HttpPut("tile/{id}")]
+        public IActionResult UpdateTile(int id, [FromBody] Tile tile)
+        {
+            if (id != tile.Id) return BadRequest();
+            _service.Update(id, tile);
+            return NoContent();
+        }
+
+        // ... Update para Cement ...
 
         [HttpDelete("{id}")]
         public IActionResult Delete(int id)

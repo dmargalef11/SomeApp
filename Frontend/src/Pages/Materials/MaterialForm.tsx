@@ -7,22 +7,29 @@ interface Distributor {
     name: string;
 }
 
-// EDIT: Añadimos la interfaz del Material para poder recibirlo
 interface Material {
     id: number;
     name: string;
     type: string;
-    color: string;
-    texture: string;
+    // Comunes
     price: number;
     thumbnailUrl: string;
     distributorId: number;
+    // Específicos (opcionales porque no todos tienen todo)
+    colorHex?: string;
+    finish?: string;
+    isWaterBased?: boolean;
+    widthCm?: number;
+    heightCm?: number;
+    isAntiSlip?: boolean;
+    strengthClass?: string;
+    weightKg?: number;
 }
 
 interface MaterialFormProps {
     onSuccess: () => void;
     onCancel: () => void;
-    initialData?: Material | null; // EDIT: Prop nueva opcional
+    initialData?: Material | null;
 }
 
 const convertToBase64 = (file: File): Promise<string> => {
@@ -35,15 +42,30 @@ const convertToBase64 = (file: File): Promise<string> => {
 };
 
 const MaterialForm = ({ onSuccess, onCancel, initialData }: MaterialFormProps) => {
-    // EDIT: Inicializamos el estado con los datos si existen, o vacíos si es nuevo
+    // Inicializar estado con TODOS los campos posibles
     const [formData, setFormData] = useState({
+        // Comunes
         name: initialData?.name || '',
         type: initialData?.type || 'Paint',
-        color: initialData?.color || '#ffffff',
-        texture: initialData?.texture || '',
         price: initialData?.price || 0,
         thumbnailUrl: initialData?.thumbnailUrl || '',
-        distributorId: initialData?.distributorId || ''
+        distributorId: initialData?.distributorId || '',
+
+        // Paint
+        colorHex: initialData?.colorHex || '#ffffff',
+        finish: initialData?.finish || '',
+        isWaterBased: initialData?.isWaterBased || false,
+
+        // Tile
+        widthCm: initialData?.widthCm || 0,
+        heightCm: initialData?.heightCm || 0,
+        isAntiSlip: initialData?.isAntiSlip || false,
+        materialType: 'Ceramic', // Default para Tile
+
+        // Cement
+        weightKg: initialData?.weightKg || 25,
+        strengthClass: initialData?.strengthClass || '42.5N',
+        cementColor: 'Grey' // Renombrado para evitar conflicto con "color" genérico
     });
 
     const [distributors, setDistributors] = useState<Distributor[]>([]);
@@ -52,37 +74,29 @@ const MaterialForm = ({ onSuccess, onCancel, initialData }: MaterialFormProps) =
     useEffect(() => {
         axios.get('http://localhost:5113/api/Distributors')
             .then(res => setDistributors(res.data))
-            .catch(err => console.error("Error loading distributors:", err));
+            .catch(err => console.error(err));
     }, []);
 
     const handleChange = async (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-        const { name, value } = e.target;
+        const { name, value, type } = e.target;
+        const checked = (e.target as HTMLInputElement).checked;
 
-        if (e.target.type === 'file') {
-            const fileInput = e.target as HTMLInputElement;
-            const originalFile = fileInput.files?.[0];
-
-            if (originalFile) {
+        if (type === 'file') {
+            const file = (e.target as HTMLInputElement).files?.[0];
+            if (file) {
                 try {
-                    const options = {
-                        maxSizeMB: 0.1,
-                        maxWidthOrHeight: 800,
-                        useWebWorker: true,
-                        fileType: "image/jpeg"
-                    };
-                    const compressedFile = await imageCompression(originalFile, options);
-                    const base64 = await convertToBase64(compressedFile);
+                    const options = { maxSizeMB: 0.1, maxWidthOrHeight: 800, useWebWorker: true, fileType: "image/jpeg" };
+                    const compressed = await imageCompression(file, options);
+                    const base64 = await convertToBase64(compressed);
                     setFormData(prev => ({ ...prev, thumbnailUrl: base64 }));
-                } catch (err) {
-                    console.error(err);
-                    alert("Error processing image");
-                }
+                } catch (err) { console.error(err); }
             }
+        } else if (type === 'checkbox') {
+            setFormData(prev => ({ ...prev, [name]: checked }));
         } else {
-            setFormData(prev => ({
-                ...prev,
-                [name]: name === 'price' || name === 'distributorId' ? Number(value) : value
-            }));
+            // Convertir a número si es necesario
+            const isNumber = ['price', 'distributorId', 'widthCm', 'heightCm', 'weightKg'].includes(name);
+            setFormData(prev => ({ ...prev, [name]: isNumber ? Number(value) : value }));
         }
     };
 
@@ -90,21 +104,20 @@ const MaterialForm = ({ onSuccess, onCancel, initialData }: MaterialFormProps) =
         e.preventDefault();
         setLoading(true);
 
+        const endpointType = formData.type.toLowerCase(); // paint, tile, cement
+        const baseUrl = `http://localhost:5113/api/Materials/${endpointType}`;
+
         try {
             if (initialData) {
-                // EDIT: Si hay initialData, hacemos PUT (Actualizar)
-                // Necesitamos enviar el ID en la URL y el objeto con ID en el cuerpo
-                const updatePayload = { ...formData, id: initialData.id };
-                await axios.put(`http://localhost:5113/api/Materials/${initialData.id}`, updatePayload);
-                alert('Material updated successfully!');
+                await axios.put(`${baseUrl}/${initialData.id}`, { ...formData, id: initialData.id });
+                alert('Updated!');
             } else {
-                // EDIT: Si no, hacemos POST (Crear)
-                await axios.post('http://localhost:5113/api/Materials', formData);
-                alert('Material created successfully!');
+                await axios.post(baseUrl, formData);
+                alert('Created!');
             }
             onSuccess();
         } catch (error) {
-            console.error("Error saving material:", error);
+            console.error("Error saving:", error);
             alert('Error saving material.');
         } finally {
             setLoading(false);
@@ -113,24 +126,22 @@ const MaterialForm = ({ onSuccess, onCancel, initialData }: MaterialFormProps) =
 
     return (
         <div style={{ background: '#f8f9fa', padding: '20px', borderRadius: '8px', marginBottom: '20px', border: '1px solid #ddd' }}>
-            {/* EDIT: Título dinámico */}
-            <h3>{initialData ? `Edit Material #${initialData.id}` : 'New Material'}</h3>
+            <h3>{initialData ? `Edit ${formData.type} #${initialData.id}` : 'New Material'}</h3>
 
             <form onSubmit={handleSubmit} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
-                {/* ... (El resto del formulario es idéntico, no cambia nada visualmente) ... */}
 
+                {/* COMUNES */}
                 <div style={{ gridColumn: 'span 2' }}>
-                    <label>Material Name:</label>
+                    <label>Name:</label>
                     <input required type="text" name="name" value={formData.name} onChange={handleChange} style={{ width: '100%', padding: '8px' }} />
                 </div>
 
                 <div>
                     <label>Type:</label>
-                    <select name="type" value={formData.type} onChange={handleChange} style={{ width: '100%', padding: '8px' }}>
+                    {/* Deshabilitamos cambiar tipo al editar para simplificar lógica */}
+                    <select name="type" value={formData.type} onChange={handleChange} disabled={!!initialData} style={{ width: '100%', padding: '8px' }}>
                         <option value="Paint">Paint</option>
                         <option value="Tile">Tile</option>
-                        <option value="Wood">Wood</option>
-                        <option value="Metal">Metal</option>
                         <option value="Cement">Cement</option>
                     </select>
                 </div>
@@ -138,7 +149,7 @@ const MaterialForm = ({ onSuccess, onCancel, initialData }: MaterialFormProps) =
                 <div>
                     <label>Distributor:</label>
                     <select required name="distributorId" value={formData.distributorId} onChange={handleChange} style={{ width: '100%', padding: '8px' }}>
-                        <option value="">Select a Supplier...</option>
+                        <option value="">Select Supplier...</option>
                         {distributors.map(d => (<option key={d.id} value={d.id}>{d.name}</option>))}
                     </select>
                 </div>
@@ -148,21 +159,66 @@ const MaterialForm = ({ onSuccess, onCancel, initialData }: MaterialFormProps) =
                     <input type="number" step="0.01" name="price" value={formData.price} onChange={handleChange} style={{ width: '100%', padding: '8px' }} />
                 </div>
 
-                <div>
-                    <label>Color:</label>
-                    <div style={{ display: 'flex', gap: '10px' }}>
-                        <input type="color" name="color" value={formData.color} onChange={handleChange} style={{ height: '38px', width: '50px' }} />
-                        <input type="text" name="color" value={formData.color} onChange={handleChange} style={{ flex: 1, padding: '8px' }} />
-                    </div>
-                </div>
+                {/* ---------------- CAMPOS ESPECÍFICOS DE PAINT ---------------- */}
+                {formData.type === 'Paint' && (
+                    <>
+                        <div>
+                            <label>Color (Hex):</label>
+                            <div style={{ display: 'flex', gap: '5px' }}>
+                                <input type="color" name="colorHex" value={formData.colorHex} onChange={handleChange} style={{ height: '38px' }} />
+                                <input type="text" name="colorHex" value={formData.colorHex} onChange={handleChange} style={{ flex: 1, padding: '8px' }} />
+                            </div>
+                        </div>
+                        <div>
+                            <label>Finish:</label>
+                            <input type="text" name="finish" value={formData.finish} onChange={handleChange} placeholder="Matte, Satin..." style={{ width: '100%', padding: '8px' }} />
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            <input type="checkbox" name="isWaterBased" checked={formData.isWaterBased} onChange={handleChange} />
+                            <label>Water Based</label>
+                        </div>
+                    </>
+                )}
 
-                <div>
-                    <label>Texture:</label>
-                    <input type="text" name="texture" value={formData.texture} onChange={handleChange} style={{ width: '100%', padding: '8px' }} />
-                </div>
+                {/* ---------------- CAMPOS ESPECÍFICOS DE TILE ---------------- */}
+                {formData.type === 'Tile' && (
+                    <>
+                        <div>
+                            <label>Width (cm):</label>
+                            <input type="number" name="widthCm" value={formData.widthCm} onChange={handleChange} style={{ width: '100%', padding: '8px' }} />
+                        </div>
+                        <div>
+                            <label>Height (cm):</label>
+                            <input type="number" name="heightCm" value={formData.heightCm} onChange={handleChange} style={{ width: '100%', padding: '8px' }} />
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            <input type="checkbox" name="isAntiSlip" checked={formData.isAntiSlip} onChange={handleChange} />
+                            <label>Anti-Slip Surface</label>
+                        </div>
+                    </>
+                )}
 
+                {/* ---------------- CAMPOS ESPECÍFICOS DE CEMENT ---------------- */}
+                {formData.type === 'Cement' && (
+                    <>
+                        <div>
+                            <label>Weight (Kg):</label>
+                            <input type="number" name="weightKg" value={formData.weightKg} onChange={handleChange} style={{ width: '100%', padding: '8px' }} />
+                        </div>
+                        <div>
+                            <label>Strength Class:</label>
+                            <select name="strengthClass" value={formData.strengthClass} onChange={handleChange} style={{ width: '100%', padding: '8px' }}>
+                                <option value="32.5N">32.5N</option>
+                                <option value="42.5N">42.5N</option>
+                                <option value="52.5N">52.5N</option>
+                            </select>
+                        </div>
+                    </>
+                )}
+
+                {/* IMAGEN COMÚN */}
                 <div style={{ gridColumn: 'span 2' }}>
-                    <label>Material Image (Upload):</label>
+                    <label>Image:</label>
                     <div style={{ display: 'flex', gap: '15px', alignItems: 'center', marginTop: '5px' }}>
                         <input type="file" accept="image/*" onChange={handleChange} style={{ padding: '5px' }} />
                         {formData.thumbnailUrl && (
@@ -176,7 +232,7 @@ const MaterialForm = ({ onSuccess, onCancel, initialData }: MaterialFormProps) =
                 <div style={{ gridColumn: 'span 2', marginTop: '10px', display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
                     <button type="button" onClick={onCancel} style={{ padding: '10px 20px', background: '#ccc', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Cancel</button>
                     <button type="submit" disabled={loading} style={{ padding: '10px 20px', background: '#27ae60', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
-                        {loading ? 'Saving...' : (initialData ? 'Update Material' : 'Save Material')}
+                        {loading ? 'Saving...' : (initialData ? 'Update' : 'Save')}
                     </button>
                 </div>
             </form>

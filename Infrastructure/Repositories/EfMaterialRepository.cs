@@ -1,7 +1,7 @@
-﻿using SomeApp.Infrastructure.Data;
+﻿using Microsoft.EntityFrameworkCore;
 using SomeApp.Domain.Entities;
 using SomeApp.Domain.Repositories;
-using Microsoft.EntityFrameworkCore;
+using SomeApp.Infrastructure.Data;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -16,47 +16,54 @@ namespace SomeApp.Infrastructure.Repositories
             _context = context;
         }
 
-        public IEnumerable<Material> GetAll() => _context.Materials.AsNoTracking().ToList();
+        public IEnumerable<Material> GetAll()
+        {
+            // AsNoTracking mejora rendimiento para lectura
+            return _context.Materials.AsNoTracking().ToList();
+        }
 
-        public Material GetById(int id) => _context.Materials.Find(id);
+        public Material? GetById(int id)
+        {
+            return _context.Materials.Find(id);
+        }
 
         public void Add(Material material)
         {
+            // EF Core sabe si es Paint o Tile y lo guarda bien
             _context.Materials.Add(material);
+            _context.SaveChanges();
+        }
+
+        public void Update(int id, Material material)
+        {
+            // TRUCO: En vez de buscar y copiar, adjuntamos y marcamos modificado.
+            // Esto funciona para cualquier hijo (Paint, Tile, etc.)
+
+            // Aseguramos ID correcto
+            if (material.Id != id) material.Id = id;
+
+            _context.Materials.Attach(material);
+            _context.Entry(material).State = EntityState.Modified;
+
             _context.SaveChanges();
         }
 
         public bool Delete(int id)
         {
-            var entity = _context.Materials.Find(id);
-            if (entity == null) return false;
-            _context.Materials.Remove(entity);
+            var material = _context.Materials.Find(id);
+            if (material == null) return false;
+
+            _context.Materials.Remove(material);
             _context.SaveChanges();
             return true;
         }
-
-        public void Update(int id, Material updatedMaterial)
-        {
-            var existing = _context.Materials.Find(id);
-            if (existing == null) return;
-
-            existing.Name = updatedMaterial.Name;
-            existing.Type = updatedMaterial.Type;
-            existing.Color = updatedMaterial.Color;
-            existing.Texture = updatedMaterial.Texture;
-            existing.ThumbnailUrl = updatedMaterial.ThumbnailUrl;
-            existing.Price = updatedMaterial.Price;
-            existing.DistributorId = updatedMaterial.DistributorId;
-
-            _context.SaveChanges();
-        }
-
         public IEnumerable<Material> GetByDistributorId(int distributorId)
         {
             return _context.Materials
+                .AsNoTracking() // Opcional, pero bueno para rendimiento
                 .Where(m => m.DistributorId == distributorId)
-                .AsNoTracking()
                 .ToList();
         }
+
     }
 }
