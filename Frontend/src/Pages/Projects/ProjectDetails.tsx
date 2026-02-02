@@ -1,17 +1,18 @@
-import { useEffect, useState } from 'react';
+ï»¿import { useEffect, useState } from 'react';
 import axios from 'axios';
 // Puedes usar useParams si usas React Router, o props si lo muestras en un modal
-// Aquí asumo que usas React Router: import { useParams } from 'react-router-dom';
+// AquÃ­ asumo que usas React Router: import { useParams } from 'react-router-dom';
 
 interface Material {
     id: number;
     name: string;
     price: number;
+    stock: number;
     type: string;
 }
 
 interface ProjectMaterial {
-    id: number; // ID de la relación
+    id: number; // ID de la relaciÃ³n
     materialId: number;
     material?: Material;
     quantity: number;
@@ -35,7 +36,7 @@ const ProjectDetails = ({ projectId, onBack }: Props) => {
     const [projectMaterials, setProjectMaterials] = useState<ProjectMaterial[]>([]);
     const [availableMaterials, setAvailableMaterials] = useState<Material[]>([]);
 
-    // Estado para el formulario de añadir
+    // Estado para el formulario de aÃ±adir
     const [selectedMaterialId, setSelectedMaterialId] = useState<number | ''>('');
     const [quantity, setQuantity] = useState<number>(1);
     const [notes, setNotes] = useState('');
@@ -68,7 +69,7 @@ const ProjectDetails = ({ projectId, onBack }: Props) => {
         if (projectId) loadData();
     }, [projectId]);
 
-    // Función: Añadir Material
+    // FunciÃ³n: AÃ±adir Material
     const handleAddMaterial = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!selectedMaterialId || quantity <= 0) return;
@@ -81,21 +82,33 @@ const ProjectDetails = ({ projectId, onBack }: Props) => {
                 usageNotes: notes
             });
 
-            // Recargar la lista de materiales del proyecto
+            // Recargar materiales del proyecto Y TAMBIÃ‰N LOS DISPONIBLES (porque el stock ha bajado)
             const pmRes = await axios.get(`http://localhost:5113/api/ProjectMaterials/project/${projectId}`);
             setProjectMaterials(pmRes.data);
 
-            // Limpiar form
+            // Recargamos el catÃ¡logo para ver el stock actualizado
+            const allMatRes = await axios.get('http://localhost:5113/api/Materials');
+            setAvailableMaterials(allMatRes.data);
+
             setQuantity(1);
             setNotes('');
-            // No limpiamos el materialId por si quiere añadir más del mismo tipo, o sí, a gusto.
-        } catch (error) {
-            alert('Error adding material');
-            console.error(error);
+        } catch (error) { // Quita ': any'
+            if (axios.isAxiosError(error) && error.response) {
+                // Error 400 = Problema de Stock o validaciÃ³n
+                if (error.response.status === 400) {
+                    alert(`âš ï¸ STOCK ERROR:\n${error.response.data}`);
+                } else {
+                    alert(`Error: ${error.response.statusText}`);
+                }
+            } else {
+                console.error(error);
+                alert('Unknown error adding material');
+            }
         }
     };
 
-    // Función: Quitar Material
+
+    // FunciÃ³n: Quitar Material
     const handleRemove = async (id: number) => {
         if (!confirm('Are you sure you want to remove this material from the project?')) return;
 
@@ -115,6 +128,33 @@ const ProjectDetails = ({ projectId, onBack }: Props) => {
         return acc + (price * pm.quantity);
     }, 0);
 
+    const handleDownloadPdf = async () => {
+        if (!projectId) return;
+
+        try {
+            // 1. Hacemos la peticiÃ³n indicando que esperamos un 'blob' (archivo binario)
+            const response = await axios.get(`http://localhost:5113/api/Reports/project/${projectId}`, {
+                responseType: 'blob',
+            });
+
+            // 2. Crear una URL temporal para el archivo
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+
+            // 3. Crear un enlace invisible y hacer clic en Ã©l mÃ¡gicamente
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `Project_${projectId}_Budget.pdf`); // Nombre del archivo
+            document.body.appendChild(link);
+            link.click();
+
+            // 4. Limpieza
+            link.remove();
+        } catch (error) {
+            console.error("Error downloading PDF", error);
+            alert("Failed to download PDF report.");
+        }
+    };
+
     if (loading) return <div>Loading Project Details...</div>;
     if (!project) return <div>Project not found</div>;
 
@@ -126,13 +166,46 @@ const ProjectDetails = ({ projectId, onBack }: Props) => {
                 </button>
             )}
 
-            <div style={{ borderBottom: '1px solid #ddd', paddingBottom: '20px', marginBottom: '20px' }}>
-                <h1 style={{ margin: 0 }}>{project.name}</h1>
-                <p style={{ color: '#666' }}>{project.description}</p>
-                <h3>Total Cost: {'\u20AC'}{totalCost.toFixed(2)}</h3>
+            {/* CABECERA CON BOTÃ“N PDF */}
+            <div style={{
+                borderBottom: '1px solid #ddd',
+                paddingBottom: '20px',
+                marginBottom: '20px',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'start'
+            }}>
+                <div>
+                    <h1 style={{ margin: 0, color: '#2c3e50' }}>{project.name}</h1>
+                    <p style={{ color: '#7f8c8d', margin: '5px 0' }}>{project.description}</p>
+                    <h3 style={{ color: '#27ae60', marginTop: '10px' }}>
+                        Total Cost: {'\u20AC'}{totalCost.toFixed(2)}
+                    </h3>
+                </div>
+
+                {/* BOTÃ“N PDF */}
+                <button
+                    onClick={handleDownloadPdf}
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        background: '#e74c3c', // Rojo PDF
+                        color: 'white',
+                        border: 'none',
+                        padding: '10px 20px',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        fontWeight: 'bold',
+                        boxShadow: '0 2px 5px rgba(0,0,0,0.2)'
+                    }}
+                >
+                    ðŸ“„ Download Budget
+                </button>
             </div>
 
-            {/* FORMULARIO PARA AÑADIR */}
+
+            {/* FORMULARIO PARA AÃ‘ADIR */}
             <div style={{ background: '#f9f9f9', padding: '15px', borderRadius: '8px', marginBottom: '30px' }}>
                 <h4>Add Material to Project</h4>
                 <form onSubmit={handleAddMaterial} style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'end' }}>
@@ -147,8 +220,9 @@ const ProjectDetails = ({ projectId, onBack }: Props) => {
                         >
                             <option value="">-- Select Material --</option>
                             {availableMaterials.map(m => (
-                                <option key={m.id} value={m.id}>
-                                    {m.name} ({m.type}) - {'\u20AC'}{m.price}
+                                <option key={m.id} value={m.id} disabled={m.stock <= 0} // Deshabilitar si no hay stock
+                                    style={{ color: m.stock <= 0 ? '#ccc' : 'black' }}>
+                                    {m.name} ({m.type}) - {'\u20AC'}{m.price} {m.stock <= 0 ? ' [OUT OF STOCK]' : ` [Stock: ${m.stock}]`}
                                 </option>
                             ))}
                         </select>
