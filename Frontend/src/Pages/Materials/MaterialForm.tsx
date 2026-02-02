@@ -13,6 +13,7 @@ interface Material {
     type: string;
     // Comunes
     price: number;
+    stock: number;
     thumbnailUrl: string;
     distributorId: number;
     // Específicos (opcionales porque no todos tienen todo)
@@ -48,6 +49,7 @@ const MaterialForm = ({ onSuccess, onCancel, initialData }: MaterialFormProps) =
         name: initialData?.name || '',
         type: initialData?.type || 'Paint',
         price: initialData?.price || 0,
+        stock: initialData?.stock|| 0,
         thumbnailUrl: initialData?.thumbnailUrl || '',
         distributorId: initialData?.distributorId || '',
 
@@ -158,7 +160,16 @@ const MaterialForm = ({ onSuccess, onCancel, initialData }: MaterialFormProps) =
                     <label>Price ({'\u20AC'}):</label>
                     <input type="number" step="0.01" name="price" value={formData.price} onChange={handleChange} style={{ width: '100%', padding: '8px' }} />
                 </div>
-
+                <div style={{ flex: 1 }}>
+                    <label style={{ display: 'block', marginBottom: '5px' }}>Initial Stock</label>
+                    <input
+                        type="number"
+                        step="0.01"
+                        value={formData.stock}
+                        onChange={e => setFormData({ ...formData, stock: Number(e.target.value) })}
+                        style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
+                    />
+                </div>
                 {/* ---------------- CAMPOS ESPECÍFICOS DE PAINT ---------------- */}
                 {formData.type === 'Paint' && (
                     <>

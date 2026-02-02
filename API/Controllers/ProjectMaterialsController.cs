@@ -34,34 +34,45 @@ namespace SomeApp.Controllers
         [HttpPost]
         public async Task<ActionResult<ProjectMaterial>> AddMaterialToProject(ProjectMaterial projectMaterial)
         {
-            // Validaciones básicas
             if (projectMaterial.ProjectId <= 0 || projectMaterial.MaterialId <= 0)
                 return BadRequest("Invalid Project or Material ID.");
 
             if (projectMaterial.Quantity <= 0)
                 return BadRequest("Quantity must be greater than 0.");
 
-            // Verificar si ya existe este material en el proyecto (opcional: podríamos sumar cantidad)
+            // 1. BUSCAR EL MATERIAL EN EL ALMACÉN
+            var materialInStock = await _context.Materials.FindAsync(projectMaterial.MaterialId);
+            if (materialInStock == null)
+                return NotFound("Material not found.");
+
+            // 2. VALIDAR SI HAY SUFICIENTE STOCK
+            if (materialInStock.Stock < projectMaterial.Quantity)
+            {
+                // Devolvemos 400 Bad Request con mensaje claro
+                return BadRequest($"Not enough stock! Available: {materialInStock.Stock}, Requested: {projectMaterial.Quantity}");
+            }
+
+            // 3. RESTAR DEL STOCK (Transacción implícita)
+            materialInStock.Stock -= projectMaterial.Quantity;
+
+            // 4. AÑADIR O ACTUALIZAR LA RELACIÓN CON EL PROYECTO
             var existing = await _context.ProjectMaterials
                 .FirstOrDefaultAsync(pm => pm.ProjectId == projectMaterial.ProjectId && pm.MaterialId == projectMaterial.MaterialId);
 
             if (existing != null)
             {
-                // Estrategia: Si ya existe, sumamos la cantidad
                 existing.Quantity += projectMaterial.Quantity;
-                // Si mandan nota nueva, la actualizamos o concatenamos
                 if (!string.IsNullOrEmpty(projectMaterial.UsageNotes))
                     existing.UsageNotes = projectMaterial.UsageNotes;
             }
             else
             {
-                // Si no existe, lo creamos
                 _context.ProjectMaterials.Add(projectMaterial);
             }
 
+            // Guardamos ambos cambios: la resta de stock y la nueva línea de proyecto
             await _context.SaveChangesAsync();
 
-            // Retornamos el objeto creado con el ID generado
             return CreatedAtAction(nameof(GetByProject), new { projectId = projectMaterial.ProjectId }, projectMaterial);
         }
 
@@ -95,10 +106,20 @@ namespace SomeApp.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> RemoveMaterialFromProject(int id)
         {
-            var projectMaterial = await _context.ProjectMaterials.FindAsync(id);
+            // Incluimos el material para poder devolverle el stock
+            var projectMaterial = await _context.ProjectMaterials
+                .Include(pm => pm.Material)
+                .FirstOrDefaultAsync(pm => pm.Id == id);
+
             if (projectMaterial == null)
             {
                 return NotFound();
+            }
+
+            // DEVOLVER STOCK AL ALMACÉN
+            if (projectMaterial.Material != null)
+            {
+                projectMaterial.Material.Stock += projectMaterial.Quantity;
             }
 
             _context.ProjectMaterials.Remove(projectMaterial);
@@ -106,5 +127,6 @@ namespace SomeApp.Controllers
 
             return NoContent();
         }
+
     }
 }

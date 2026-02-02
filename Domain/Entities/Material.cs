@@ -20,6 +20,7 @@ namespace SomeApp.Domain.Entities
         [Range(0, 999999)]
         [Column(TypeName = "decimal(18,2)")]
         public decimal Price { get; set; }
+        public double Stock { get; set; } // Cantidad en inventario
 
         // Sin límite para soportar Base64
         public string ThumbnailUrl { get; set; } = string.Empty;

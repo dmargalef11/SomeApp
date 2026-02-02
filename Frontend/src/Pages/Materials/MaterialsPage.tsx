@@ -13,18 +13,19 @@ interface Material {
     name: string;
     type: string;
     price: number;
+    stock: number; // <--- CORREGIDO (Era 'stock')
     thumbnailUrl: string;
     distributorId: number;
     distributor?: Distributor;
 
-    // Propiedades opcionales de los hijos (Paint, Tile, Cement)
+    // Propiedades opcionales de los hijos
     colorHex?: string;
     finish?: string;
-    isWaterBased?: boolean;    // <--- Faltaba esta
+    isWaterBased?: boolean;
     widthCm?: number;
     heightCm?: number;
     isAntiSlip?: boolean;
-    materialType?: string;     // <--- Faltaba esta (para Tile)
+    materialType?: string;
     weightKg?: number;
     strengthClass?: string;
     cementColor?: string;
@@ -69,7 +70,6 @@ const MaterialsPage = () => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
-    
     const handleDelete = async (id: number) => {
         if (!confirm('Are you sure you want to delete this material?')) return;
 
@@ -77,7 +77,6 @@ const MaterialsPage = () => {
             await axios.delete(`http://localhost:5113/api/Materials/${id}`);
             setMaterials(prev => prev.filter(m => m.id !== id));
         } catch (error) {
-            // Usamos la función de ayuda de Axios para saber si es un error de red/api
             if (axios.isAxiosError(error) && error.response?.status === 409) {
                 alert("⛔ CANNOT DELETE: This material is currently used in a Project.\n\nRemove it from the project first.");
             } else {
@@ -86,8 +85,6 @@ const MaterialsPage = () => {
             }
         }
     };
-
-
 
     return (
         <div>
@@ -122,8 +119,6 @@ const MaterialsPage = () => {
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px' }}>
                     {materials.map(mat => {
                         const dist = getDistributor(mat.distributorId);
-
-                        // Lógica visual para el fondo de la tarjeta
                         const cardBackground = mat.colorHex || '#ddd';
 
                         return (
@@ -134,19 +129,21 @@ const MaterialsPage = () => {
                                 boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
                                 border: '1px solid #eee'
                             }}>
+                                {/* CABECERA CON IMAGEN Y ETIQUETA STOCK */}
                                 <div style={{
                                     height: '120px',
-                                    background: cardBackground, // Usamos la variable calculada
+                                    background: cardBackground,
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'center',
-                                    position: 'relative'
+                                    position: 'relative' // <--- IMPORTANTE: El padre relativo
                                 }}>
                                     {mat.thumbnailUrl ?
                                         <img src={mat.thumbnailUrl} alt={mat.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> :
                                         <span style={{ color: '#fff', textShadow: '0 1px 3px rgba(0,0,0,0.5)' }}>No Image</span>
                                     }
 
+                                    {/* PRECIO (Abajo derecha) */}
                                     <span style={{
                                         position: 'absolute',
                                         bottom: '10px',
@@ -159,6 +156,24 @@ const MaterialsPage = () => {
                                     }}>
                                         {'\u20AC'}{mat.price.toFixed(2)} /unit
                                     </span>
+
+                                    {/* ETIQUETA STOCK (Arriba izquierda) - MOVIDO AQUÍ DENTRO */}
+                                    <div style={{
+                                        position: 'absolute',
+                                        top: '10px',
+                                        left: '10px',
+                                        background: mat.stock > 0 ? 'rgba(255,255,255,0.9)' : '#ffebee',
+                                        color: mat.stock > 0 ? '#2e7d32' : '#c62828',
+                                        padding: '4px 8px',
+                                        borderRadius: '4px',
+                                        fontSize: '0.85em',
+                                        fontWeight: 'bold',
+                                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                                    }}>
+                                        {mat.stock > 0
+                                            ? `In Stock: ${mat.stock}`
+                                            : '🚫 Out of Stock'}
+                                    </div>
                                 </div>
 
                                 <div style={{ padding: '15px' }}>
@@ -188,7 +203,6 @@ const MaterialsPage = () => {
 
                                     {/* DETALLES ESPECÍFICOS SEGÚN EL TIPO */}
                                     <div style={{ marginTop: '15px', fontSize: '0.9em', color: '#666', minHeight: '60px' }}>
-
                                         {/* PINTURA */}
                                         {mat.type === 'Paint' && (
                                             <>
@@ -245,12 +259,10 @@ const MaterialsPage = () => {
                                             </>
                                         )}
 
-                                        {/* Fallback por si el tipo no coincide o es viejo */}
                                         {!['Paint', 'Tile', 'Cement'].includes(mat.type) && (
                                             <p style={{ fontStyle: 'italic', color: '#999' }}>Generic Material</p>
                                         )}
                                     </div>
-
 
                                     {/* Botonera */}
                                     <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
@@ -267,8 +279,6 @@ const MaterialsPage = () => {
                                             Delete
                                         </button>
                                     </div>
-
-
                                 </div>
                             </div>
                         );
