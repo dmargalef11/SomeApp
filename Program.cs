@@ -5,6 +5,7 @@ using SomeApp.Application.Services;
 using SomeApp.Infrastructure.Repositories;
 using SomeApp.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
+using QuestPDF.Infrastructure;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -45,8 +46,7 @@ builder.Services.AddSwaggerGen(c =>
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "SomeApp API", Version = "v1" });
 });
 builder.Services.AddControllers();
-
-
+QuestPDF.Settings.License = LicenseType.Community;
 var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {

@@ -17,13 +17,13 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.21.0" />
+    <PackageReference Include="QuestPDF" Version="2025.12.3" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="10.0.1" />
   </ItemGroup>
 
   <ItemGroup>
     <Folder Include="Application\DTOs\" />
     <Folder Include="Frontend\src\Components\UI\" />
-    <Folder Include="Frontend\src\Pages\Dashboard\" />
     <Folder Include="Frontend\src\Services\" />
     <Folder Include="Tests\" />
   </ItemGroup>
