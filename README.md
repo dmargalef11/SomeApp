@@ -1,4 +1,4 @@
-﻿# Construction Materials ERP
+﻿# RoomFlow ERP
 
 **Inventory and Project Management System built with layered architecture.**
 
