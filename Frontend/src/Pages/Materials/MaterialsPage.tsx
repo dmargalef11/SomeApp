@@ -1,6 +1,7 @@
 ﻿import { useEffect, useState } from 'react';
 import axios from 'axios';
 import MaterialForm from './MaterialForm';
+import Swal from 'sweetalert2';
 
 interface Distributor {
     id: number;
@@ -71,20 +72,45 @@ const MaterialsPage = () => {
     };
 
     const handleDelete = async (id: number) => {
-        if (!confirm('Are you sure you want to delete this material?')) return;
+        // 1. Reemplazamos el confirm nativo por Swal
+        const result = await Swal.fire({
+            title: 'Are you sure?',
+            text: "You won't be able to revert this!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'Yes, delete it!'
+        });
+
+        if (!result.isConfirmed) return; // Si cancela, no hacemos nada
 
         try {
             await axios.delete(`http://localhost:5113/api/Materials/${id}`);
             setMaterials(prev => prev.filter(m => m.id !== id));
+
+            // Éxito visual
+            Swal.fire(
+                'Deleted!',
+                'The material has been deleted.',
+                'success'
+            );
+
         } catch (error) {
             if (axios.isAxiosError(error) && error.response?.status === 409) {
-                alert("⛔ CANNOT DELETE: This material is currently used in a Project.\n\nRemove it from the project first.");
+                // Error visual bonito
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Cannot Delete',
+                    text: 'This material is currently used in a Project. Remove it from there first.',
+                    footer: '<i>Data Integrity Protection Active</i>'
+                });
             } else {
-                console.error(error);
-                alert("Error deleting material");
+                Swal.fire('Error', 'Could not delete material', 'error');
             }
         }
     };
+
 
     return (
         <div>
@@ -220,12 +246,21 @@ const MaterialsPage = () => {
                                                         </>
                                                     ) : 'N/A'}
                                                 </div>
-                                                <p style={{ margin: '5px 0' }}><strong>Finish:</strong> {mat.finish || '-'}</p>
-                                                {mat.isWaterBased && (
-                                                    <span style={{ fontSize: '0.85em', background: '#e3f2fd', color: '#1565c0', padding: '2px 6px', borderRadius: '4px' }}>
-                                                        💧 Water Based
-                                                    </span>
-                                                )}
+                                                <div style={{
+                                                    display: 'flex',
+                                                    justifyContent: 'space-between',
+                                                    alignItems: 'center',
+                                                    margin: '5px 0'
+                                                }}>
+                                                    <p style={{ margin: 0 }}><strong>Finish:</strong> {mat.finish || '-'}</p>
+
+                                                    {mat.isWaterBased && (
+                                                        <span style={{ fontSize: '0.85em', background: '#e3f2fd', color: '#1565c0', padding: '2px 6px', borderRadius: '4px' }}>
+                                                            💧 Water Based
+                                                        </span>
+                                                    )}
+                                                </div>
+
                                             </>
                                         )}
 

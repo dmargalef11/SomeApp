@@ -9,6 +9,12 @@ namespace SomeApp.API.Controllers
     public class DesignJobsController : ControllerBase
     {
         private readonly IDesignJobService _service;
+        public class CreateDesignJobRequest
+        {
+            public string Prompt { get; set; }
+            public int ProjectId { get; set; }
+            public IFormFile Image { get; set; }
+        }
 
         public DesignJobsController(IDesignJobService service)
         {
@@ -33,25 +39,35 @@ namespace SomeApp.API.Controllers
         }
 
         [HttpPost]
-        public ActionResult<DesignJob> Create(DesignJob job)
-        {
-            _service.CreateJob(job);
-            return CreatedAtAction(nameof(GetById), new { id = job.Id }, job);
-        }
+    public async Task<ActionResult<DesignJob>> Create([FromForm] CreateDesignJobRequest request)
+    {
+        // Validamos que llegue imagen
+        if (request.Image == null || request.Image.Length == 0)
+            return BadRequest("Image is required for remodeling.");
+
+        await _service.CreateJobAsync(request.ProjectId, request.Prompt, request.Image);
+        
+        return Ok(); 
+    }
 
         // Endpoint para que ComfyUI (o un worker) notifique que terminó
-        [HttpPost("{id}/complete")]
-        public IActionResult CompleteJob(int id, [FromBody] CompletionRequest request)
-        {
-            _service.UpdateStatus(id, "Completed", request.ImageUrl);
-            return NoContent();
-        }
+        //[HttpPost("{id}/complete")]
+        //public IActionResult CompleteJob(int id, [FromBody] CompletionRequest request)
+        //{
+        //    _service.UpdateStatus(id, "Completed", request.ImageUrl);
+        //    return NoContent();
+        //}
 
-        // Clase simple para recibir el payload
-        public class CompletionRequest
-        {
-            public string ImageUrl { get; set; } = string.Empty;
-        }
+
+
+        //// Clase simple para recibir el payload
+        //public class CompletionRequest
+        //{
+        //    public string ImageUrl { get; set; } = string.Empty;
+        //}
+
+
+
 
         [HttpDelete("{id}")]
         public IActionResult Delete(int id)

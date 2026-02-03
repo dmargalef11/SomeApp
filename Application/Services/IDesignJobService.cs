@@ -1,5 +1,5 @@
 ﻿using SomeApp.Domain.Entities;
-using System.Collections.Generic;
+using Microsoft.AspNetCore.Http;
 
 namespace SomeApp.Application.Services
 {
@@ -7,9 +7,13 @@ namespace SomeApp.Application.Services
     {
         IEnumerable<DesignJob> GetAll();
         DesignJob GetById(int id);
-        void CreateJob(DesignJob job);  // Nombre diferente para indicar acción de negocio
-        bool Delete(int id);
-        void UpdateStatus(int id, string status, string? resultUrl);
+
         IEnumerable<DesignJob> GetByProjectId(int projectId);
+
+        DesignJob CreateJob(DesignJob designJob);
+        Task CreateJobAsync(int projectId, string promptText, IFormFile imageFile);
+
+        bool Delete(int id);
+        void UpdateStatus(int id, string status, string? imageUrl = null);
     }
 }

@@ -24,7 +24,7 @@ builder.Services.AddScoped<IDistributorService, DistributorService>();
 builder.Services.AddScoped<IMaterialService, MaterialService>();
 builder.Services.AddScoped<IProjectService, ProjectService>();
 builder.Services.AddScoped<IDesignJobService, DesignJobService>();
-
+builder.Services.AddHttpClient();
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowReactApp", policy =>
